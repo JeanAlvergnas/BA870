@@ -5,20 +5,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import time
 
 # -------------------- Config --------------------
 st.set_page_config(page_title="Stock Volume Prediction App", layout="wide")
 
 # -------------------- Sidebar Navigation --------------------
-page = st.sidebar.radio("Navigate", [
-    "Top Traded Stocks",
-    "User Input",
-    "Prediction Output",
-    "Feature Importance"
-])
+page = st.sidebar.radio("Navigate", ["Top Traded Stocks", "User Input", "Prediction Output", "Feature Importance"])
 
-# -------------------- Page 1: Top 3 Most Traded Stocks --------------------
+# -------------------- Tab 1: Top 3 Most Traded Stocks --------------------
 if page == "Top Traded Stocks":
     st.title("📊 Stock Volume Prediction App")
     st.header("Top 3 Most Traded Stocks Over the Past Month")
@@ -29,19 +23,20 @@ if page == "Top Traded Stocks":
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=30)
 
-    for tkr in tickers:
-        df = yf.download(tkr, start=start_date, end=end_date, interval='1d', progress=False)
-        if not df.empty and 'Volume' in df.columns:
-            volume_value = df['Volume'].mean()
-            avg_volumes.append((tkr, volume_value))
+    for ticker in tickers:
+        try:
+            df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
+            if not df.empty and 'Volume' in df.columns:
+                avg_volume = df['Volume'].mean()
+                avg_volumes.append((ticker, avg_volume))
+        except Exception as e:
+            st.warning(f"Error processing {ticker}: {e}")
 
-    # Sort and pick top 3
-    top3_tickers = sorted(avg_volumes, key=lambda x: x[1], reverse=True)[:3]
-    top3_symbols = [t[0] for t in top3_tickers]
+    # Sort and get top 3 tickers
+    top3_tickers = [t[0] for t in sorted(avg_volumes, key=lambda x: x[1], reverse=True)[:3]]
 
-    # Fetch volume data again for chart
     volume_data = []
-    for ticker in top3_symbols:
+    for ticker in top3_tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty and 'Volume' in df.columns:
             df = df[['Volume']].copy()
@@ -52,15 +47,13 @@ if page == "Top Traded Stocks":
     if volume_data:
         combined_df = pd.concat(volume_data, ignore_index=True)
         combined_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
-
-        st.subheader("Top 3 Stocks by Average Daily Volume (Last 30 Days)")
         st.line_chart(combined_df)
     else:
         st.warning("No volume data available to display.")
 
-# -------------------- Page 2: User Input --------------------
+# -------------------- Tab 2: User Input --------------------
 elif page == "User Input":
-    st.header("2. Select Stock and Time Range")
+    st.header("Select Stock and Time Range")
     ticker = st.text_input("Enter stock ticker:", value="TSLA")
     start = st.date_input("Start date", value=pd.to_datetime("2022-01-01"))
     end = st.date_input("End date", value=pd.to_datetime("today"))
@@ -77,13 +70,12 @@ elif page == "User Input":
         else:
             st.error("No data found for the selected inputs.")
 
-# -------------------- Page 3: Prediction Output --------------------
+# -------------------- Tab 3: Prediction Output --------------------
 elif page == "Prediction Output":
-    st.header("3. Prediction Model Output")
+    st.header("Prediction Model Output")
 
     if 'user_data' in locals() and not user_data.empty:
         user_data = user_data.dropna(subset=["Volume"])
-
         random_factors_raw = np.random.uniform(low=0.95, high=1.05, size=user_data.shape[0])
         random_factors = pd.Series(random_factors_raw, index=user_data.index)
 
@@ -99,9 +91,9 @@ elif page == "Prediction Output":
     else:
         st.info("Load data to see prediction output.")
 
-# -------------------- Page 4: Feature Importance --------------------
+# -------------------- Tab 4: Feature Importance --------------------
 elif page == "Feature Importance":
-    st.header("4. Feature Importance (Model Explainability)")
+    st.header("Feature Importance (Model Explainability)")
 
     features = ['Lag_1_Volume', 'Price_Change', 'Moving_Avg_7d', 'RSI', 'MACD']
     importances_raw = np.random.dirichlet(np.ones(len(features)), size=1)[0]
