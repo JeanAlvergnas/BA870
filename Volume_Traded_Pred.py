@@ -1,47 +1,45 @@
+# stock_volume_app.py
 import streamlit as st
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import requests
+import time
 
-# -------------------- App Config --------------------
+# -------------------- Config --------------------
 st.set_page_config(page_title="Stock Volume Prediction App", layout="wide")
 
 # -------------------- Sidebar Navigation --------------------
-page = st.sidebar.selectbox("Select a tab", [
+page = st.sidebar.selectbox("Choose a section:", [
     "Top Traded Stocks",
     "User Input",
     "Prediction Output",
     "Feature Importance"
 ])
 
-# -------------------- Tab 1: Top 3 Most Traded Stocks --------------------
+# -------------------- Page 1: Top 3 Most Traded Stocks --------------------
 if page == "Top Traded Stocks":
     st.title("📊 Stock Volume Prediction App")
     st.header("1. Top 3 Most Traded Stocks Over the Past Month")
 
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
-
-    @st.cache_data(ttl=3600)
-    def get_avg_volume_yf(ticker):
-        try:
-            df = yf.download(ticker, period="1mo", interval="1d", progress=False)
-            return df['Volume'].mean()
-        except:
-            return None
-
     avg_volumes = []
-    for tkr in tickers:
-        vol = get_avg_volume_yf(tkr)
-        if vol is not None:
-            avg_volumes.append((tkr, vol))
+    end_date = pd.to_datetime("today")
+    start_date = end_date - pd.Timedelta(days=30)
+
+    for ticker in tickers:
+        df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
+        if not df.empty:
+            avg_volume = df['Volume'].mean()
+            avg_volumes.append((ticker, float(avg_volume)))
 
     top3_tickers = [t[0] for t in sorted(avg_volumes, key=lambda x: x[1], reverse=True)[:3]]
 
     volume_data = []
     for ticker in top3_tickers:
-        df = yf.download(ticker, period="1mo", interval="1d", progress=False)
+        df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
             df = df[['Volume']].copy()
             df['Ticker'] = ticker
@@ -51,13 +49,12 @@ if page == "Top Traded Stocks":
     if volume_data:
         combined_df = pd.concat(volume_data, ignore_index=True)
         combined_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
-
         st.subheader("Top 3 Stocks by Average Daily Volume (Last Month)")
         st.line_chart(combined_df)
     else:
-        st.warning("No volume data available.")
+        st.warning("No volume data available to display.")
 
-# -------------------- Tab 2: User Input --------------------
+# -------------------- Page 2: User Input --------------------
 elif page == "User Input":
     st.header("2. Select Stock and Time Range")
     ticker = st.text_input("Enter stock ticker:", value="TSLA")
@@ -70,19 +67,22 @@ elif page == "User Input":
         if not user_data.empty:
             st.success("Data loaded successfully!")
             st.dataframe(user_data.tail())
-            st.subheader("\U0001F4C8 Volume Chart")
+
+            st.subheader("📈 Volume Chart")
             st.line_chart(user_data['Volume'])
         else:
             st.error("No data found for the selected inputs.")
 
-# -------------------- Tab 3: Prediction Output --------------------
+# -------------------- Page 3: Prediction Output --------------------
 elif page == "Prediction Output":
     st.header("3. Prediction Model Output")
 
     if 'user_data' in locals() and not user_data.empty:
         user_data = user_data.dropna(subset=["Volume"])
+
         random_factors_raw = np.random.uniform(low=0.95, high=1.05, size=user_data.shape[0])
         random_factors = pd.Series(random_factors_raw, index=user_data.index)
+
         predicted = user_data['Volume'].shift(1).fillna(method='bfill') * random_factors
         user_data['Predicted Volume'] = predicted
 
@@ -92,16 +92,10 @@ elif page == "Prediction Output":
         ax.plot(user_data.index, user_data['Predicted Volume'], label='Predicted Volume', linestyle='--')
         ax.legend()
         st.pyplot(fig)
-
-        st.metric(
-            label="\U0001F4CA Predicted Volume for Next Period",
-            value=f"{predicted.iloc[-1]:,.0f} shares"
-        )
-        st.caption("Note: This is a placeholder until your ML model is connected.")
     else:
-        st.warning("Please load a stock in the 'User Input' tab first.")
+        st.info("Load data to see prediction output.")
 
-# -------------------- Tab 4: Feature Importance --------------------
+# -------------------- Page 4: Feature Importance --------------------
 elif page == "Feature Importance":
     st.header("4. Feature Importance (Model Explainability)")
 
