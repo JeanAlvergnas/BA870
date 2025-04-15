@@ -34,7 +34,6 @@ if page == "Top Traded Stocks":
         except Exception as e:
             st.warning(f"Error processing {ticker}: {e}")
 
-    # Build average volumes into a DataFrame safely
     avg_df = pd.DataFrame(avg_volumes, columns=["Ticker", "AvgVolume"])
     avg_df = avg_df.dropna(subset=["AvgVolume"])
     avg_df["AvgVolume"] = pd.to_numeric(avg_df["AvgVolume"], errors="coerce")
@@ -55,11 +54,18 @@ if page == "Top Traded Stocks":
         st.write("Before pivot:", combined_df.head())
         st.write("Shape:", combined_df.shape)
 
-        if {'Date', 'Ticker', 'Volume'}.issubset(combined_df.columns):
-            combined_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
-            st.line_chart(combined_df)
+        combined_df['Date'] = pd.to_datetime(combined_df['Date'])
+        combined_df['Ticker'] = combined_df['Ticker'].astype(str)
+        combined_df['Volume'] = pd.to_numeric(combined_df['Volume'], errors='coerce')
+
+        if {'Date', 'Ticker', 'Volume'}.issubset(combined_df.columns) and combined_df['Volume'].ndim == 1:
+            try:
+                pivoted = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
+                st.line_chart(pivoted)
+            except Exception as e:
+                st.error(f"Pivot failed: {e}")
         else:
-            st.error("Required columns for pivoting not found in the data.")
+            st.error("Data not in correct shape or Volume is not 1D.")
     else:
         st.warning("No volume data available to display.")
 
