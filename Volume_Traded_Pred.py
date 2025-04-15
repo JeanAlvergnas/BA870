@@ -1,56 +1,52 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 
-# -------------------- App Config --------------------
-st.set_page_config(page_title="Stock Volume App", layout="wide")
+st.set_page_config(page_title="Stock Volume Prediction App", layout="wide")
 
-# -------------------- Sidebar Navigation --------------------
-page = st.sidebar.radio("Select a tab", [
-    "Top Traded Stocks",
-    "User Input",
-    "Prediction Output",
-    "Feature Importance"
-])
+# -------------------- Sidebar Tabs --------------------
+tabs = ["Top Traded Stocks", "User Input", "Prediction Output", "Feature Importance"]
+page = st.sidebar.radio("Navigate", tabs)
 
-# -------------------- Top Traded Stocks --------------------
+# -------------------- Top 3 Most Traded Stocks --------------------
 if page == "Top Traded Stocks":
-    st.title("📊 Top 3 Most Traded Stocks - Last 30 Days")
+    st.title("📊 Stock Volume Prediction App")
+    st.subheader("1. Top 3 Most Traded Stocks Over the Past Month")
 
-    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
+    tickers = ['AAPL', 'MSFT', 'TSLA', 'NVDA', 'GOOGL', 'AMZN', 'META', 'JPM', 'NFLX', 'AMD']
+
+    avg_volumes = []
+    volume_data = []
+
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=30)
 
-    avg_volumes = []
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-        if not df.empty and 'Volume' in df.columns:
+        if not df.empty:
             avg_volume = df['Volume'].mean()
             avg_volumes.append((ticker, avg_volume))
-
-    avg_df = pd.DataFrame(avg_volumes, columns=["Ticker", "AvgVolume"])
-    avg_df = avg_df.dropna(subset=["AvgVolume"])
-    avg_df["AvgVolume"] = pd.to_numeric(avg_df["AvgVolume"], errors="coerce")
-    top3 = avg_df.sort_values("AvgVolume", ascending=False).head(3)["Ticker"].tolist()
-
-    volume_data = []
-    for ticker in top3:
-        df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-        if not df.empty:
             df = df[['Volume']].copy()
             df['Date'] = df.index
             df['Ticker'] = ticker
             volume_data.append(df)
 
-    if volume_data:
-        combined = pd.concat(volume_data)
-        pivoted = combined.pivot(index='Date', columns='Ticker', values='Volume')
-        st.line_chart(pivoted)
+    avg_df = pd.DataFrame(avg_volumes, columns=['Ticker', 'AvgVolume'])
+    top3 = avg_df.sort_values(by='AvgVolume', ascending=False).head(3)['Ticker'].tolist()
+
+    top3_data = [df for df in volume_data if df['Ticker'].iloc[0] in top3]
+
+    if top3_data:
+        combined_df = pd.concat(top3_data, ignore_index=True)
+        combined_df['Volume'] = pd.to_numeric(combined_df['Volume'], errors='coerce')
+        combined_df.dropna(subset=['Volume'], inplace=True)
+        pivot_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
+        st.line_chart(pivot_df)
     else:
-        st.warning("No data available to display.")
+        st.warning("No data available.")
 
 # -------------------- User Input --------------------
 elif page == "User Input":
@@ -72,12 +68,15 @@ elif page == "User Input":
 
 # -------------------- Prediction Output --------------------
 elif page == "Prediction Output":
-    st.header("Prediction Model Output")
+    st.header("3. Prediction Model Output")
 
     if 'user_data' in locals() and not user_data.empty:
         user_data = user_data.dropna(subset=["Volume"])
-        random_factors = pd.Series(np.random.uniform(0.95, 1.05, size=len(user_data)), index=user_data.index)
-        predicted = user_data['Volume'].shift(1).bfill() * random_factors
+
+        random_factors_raw = np.random.uniform(low=0.95, high=1.05, size=user_data.shape[0])
+        random_factors = pd.Series(random_factors_raw, index=user_data.index)
+
+        predicted = user_data['Volume'].shift(1).fillna(method='bfill') * random_factors
         user_data['Predicted Volume'] = predicted
 
         st.subheader("Actual vs Predicted Volume")
@@ -87,18 +86,20 @@ elif page == "Prediction Output":
         ax.legend()
         st.pyplot(fig)
     else:
-        st.info("Please load stock data in the User Input tab.")
+        st.info("Load data to see prediction output.")
 
 # -------------------- Feature Importance --------------------
 elif page == "Feature Importance":
-    st.header("Feature Importance (Simulated)")
+    st.header("4. Feature Importance (Model Explainability)")
+
     features = ['Lag_1_Volume', 'Price_Change', 'Moving_Avg_7d', 'RSI', 'MACD']
-    importances = np.random.dirichlet(np.ones(len(features)), size=1)[0]
-    df_imp = pd.DataFrame({'Feature': features, 'Importance': importances})
-    df_imp = df_imp.sort_values("Importance")
+    importances_raw = np.random.dirichlet(np.ones(len(features)), size=1)[0]
+    importance_df = pd.DataFrame({'Feature': features, 'Importance': importances_raw})
+    importance_df.sort_values(by='Importance', ascending=True, inplace=True)
 
     fig, ax = plt.subplots()
-    sns.barplot(data=df_imp, x='Importance', y='Feature', palette='viridis', ax=ax)
+    sns.barplot(data=importance_df, x='Importance', y='Feature', ax=ax, palette='viridis')
     ax.set_title("Feature Importance (Simulated)")
     st.pyplot(fig)
-    st.caption("Note: Replace with your trained model's feature importances.")
+
+    st.markdown("_Note: Replace simulated predictions and importances with real model outputs when ready._")
