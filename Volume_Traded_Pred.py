@@ -20,67 +20,51 @@ page = st.sidebar.radio("Go to", [
 
 st.title("📊 Stock Volume Prediction App")
 
-# -------------------- Tab 1 --------------------
-if page == "Top Traded Stocks":
-    st.header("Top 3 Most Traded Stocks Over the Past Month")
+# -------------------- Tab 1: Top 3 Most Traded Stocks (Last Month, yfinance) --------------------
+st.header("📊 1. Top 3 Most Traded Stocks Over the Past Month")
 
-    API_KEY = "CXW22KLIBXMMW6KU"
-    ALPHA_URL = "https://www.alphavantage.co/query"
-    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
+# Choose a list of popular stocks
+tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
 
-    def get_avg_volume(ticker):
-        params = {
-            "function": "TIME_SERIES_DAILY",
-            "symbol": ticker,
-            "outputsize": "compact",
-            "apikey": API_KEY
-        }
-        response = requests.get(ALPHA_URL, params=params)
-        data = response.json()
+# Function to get 1-month average volume using yfinance
+@st.cache_data(ttl=3600)
+def get_avg_volume_yf(ticker):
+    try:
+        df = yf.download(ticker, period="1mo", interval="1d", progress=False)
+        return df['Volume'].mean()
+    except Exception as e:
+        st.warning(f"Error processing {ticker}: {e}")
+        return None
 
-        if 'Time Series (Daily)' not in data:
-            st.warning(f"Error processing {ticker}: {data.get('Note') or data.get('Information') or 'Unexpected format'}")
-            return None
+# Get average volumes
+avg_volumes = []
+for tkr in tickers:
+    vol = get_avg_volume_yf(tkr)
+    if vol is not None:
+        avg_volumes.append((tkr, vol))
 
-        try:
-            df = pd.DataFrame(data['Time Series (Daily)']).T
-            df.index = pd.to_datetime(df.index)
-            df = df.astype(float)
-            last_30 = df[df.index >= pd.to_datetime("today") - pd.Timedelta(days=30)]
-            return last_30['6. volume'].mean()
-        except Exception as e:
-            st.warning(f"Error parsing data for {ticker}: {e}")
-            return None
+# Get top 3 by average volume
+top3_tickers = [t[0] for t in sorted(avg_volumes, key=lambda x: x[1], reverse=True)[:3]]
 
-    avg_volumes = []
-    for i, tkr in enumerate(tickers):
-        vol = get_avg_volume(tkr)
-        if vol is not None:
-            avg_volumes.append((tkr, vol))
-        time.sleep(12)
+# Load volume data for top 3
+volume_data = []
+for ticker in top3_tickers:
+    df = yf.download(ticker, period="1mo", interval="1d", progress=False)
+    if not df.empty:
+        df = df[['Volume']].copy()
+        df['Ticker'] = ticker
+        df['Date'] = df.index
+        volume_data.append(df)
 
-    top3_tickers = [t[0] for t in sorted(avg_volumes, key=lambda x: x[1], reverse=True)[:3]]
+# Plot
+if volume_data:
+    combined_df = pd.concat(volume_data, ignore_index=True)
+    combined_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
 
-    volume_data = []
-    end_date = pd.to_datetime("today")
-    start_date = end_date - pd.Timedelta(days=30)
-
-    for ticker in top3_tickers:
-        df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-        if not df.empty and 'Volume' in df.columns:
-            df = df[['Volume']].copy()
-            df['Ticker'] = ticker
-            df['Date'] = df.index
-            volume_data.append(df)
-
-    if volume_data:
-        combined_df = pd.concat(volume_data, ignore_index=True)
-        combined_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
-
-        st.subheader("Top 3 Stocks by Average Daily Volume (Last Month)")
-        st.line_chart(combined_df)
-    else:
-        st.warning("No volume data available to display.")
+    st.subheader("Top 3 Stocks by Average Daily Volume (Last Month)")
+    st.line_chart(combined_df)
+else:
+    st.warning("No volume data available.")
 
 # -------------------- Tab 2 --------------------
 elif page == "User Input":
