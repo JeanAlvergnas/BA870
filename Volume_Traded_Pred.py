@@ -52,8 +52,14 @@ if page == "Top Traded Stocks":
 
     if volume_data:
         combined_df = pd.concat(volume_data, ignore_index=True)
-        combined_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
-        st.line_chart(combined_df)
+        st.write("Before pivot:", combined_df.head())
+        st.write("Shape:", combined_df.shape)
+
+        if {'Date', 'Ticker', 'Volume'}.issubset(combined_df.columns):
+            combined_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
+            st.line_chart(combined_df)
+        else:
+            st.error("Required columns for pivoting not found in the data.")
     else:
         st.warning("No volume data available to display.")
 
