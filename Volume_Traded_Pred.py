@@ -45,6 +45,8 @@ if page == "Top Traded Stocks":
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
             df = df[['Volume']].copy()
+df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
+df = df[df['Volume'].notna()]
             df['Ticker'] = ticker
             df['Date'] = df.index
             volume_data.append(df)
