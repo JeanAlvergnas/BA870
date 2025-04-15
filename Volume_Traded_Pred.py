@@ -44,11 +44,11 @@ if page == "Top Traded Stocks":
     for ticker in top3_tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
-            df = df[['Volume']].copy()
-df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
-df = df[df['Volume'].notna()]
-df['Ticker'] = ticker
-df['Date'] = df.index
+                    df = df[['Volume']].copy()
+        df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
+        df = df[df['Volume'].notna()]
+        df['Ticker'] = ticker
+        df['Date'] = df.index
             df['Ticker'] = ticker
             df['Date'] = df.index
             volume_data.append(df)
@@ -124,4 +124,5 @@ elif page == "Feature Importance":
     ax.set_title("Feature Importance (Simulated)")
     st.pyplot(fig)
     st.markdown("_Note: Replace simulated predictions and importances with real model outputs when ready._")
+
 
