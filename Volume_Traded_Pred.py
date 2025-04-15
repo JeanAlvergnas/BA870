@@ -1,60 +1,52 @@
-# stock_volume_app.py
 import streamlit as st
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
-from datetime import datetime
 
-# -------------------- Config --------------------
-st.set_page_config(page_title="Stock Volume Prediction App", layout="wide")
+# -------------------- Window 1: Top 3 Most Traded Stocks Over the Past Month --------------------
+st.title("📊 Stock Volume Prediction App")
+st.header("Top 3 Most Traded Stocks Over the Past Month")
 
-# -------------------- Sidebar Navigation --------------------
-page = st.sidebar.radio("Navigate", [
-    "Top Traded Stocks", "User Input", "Prediction Output", "Feature Importance"
-])
+# Short list of tickers for demo purposes
+tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
 
-# -------------------- Tab 1: Top 3 Most Traded Stocks --------------------
-if page == "Top Traded Stocks":
-    st.title("📊 Stock Volume Prediction App")
-    st.header("Top 3 Most Traded Stocks Over the Past Month")
+# Fetch data and calculate average volume
+avg_volumes = []
+end_date = pd.to_datetime("today")
+start_date = end_date - pd.Timedelta(days=30)
 
-    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
-    avg_volumes = []
-    end_date = pd.to_datetime("today")
-    start_date = end_date - pd.Timedelta(days=30)
-
-    for tkr in tickers:
-        df = yf.download(tkr, start=start_date, end=end_date, interval='1d', progress=False)
-        if not df.empty and 'Volume' in df.columns:
-            avg_vol = df['Volume'].mean()
-            avg_volumes.append((tkr, avg_vol))
-
-    top3_tickers = [t[0] for t in sorted(avg_volumes, key=lambda x: x[1], reverse=True)[:3]]
-
-    volume_data = []
-    for ticker in top3_tickers:
-        df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-        if not df.empty:
-            df = df[['Volume']].copy()
-            df['Ticker'] = ticker
-            df['Date'] = df.index
-            volume_data.append(df)
-
-    if volume_data:
-        combined_df = pd.concat(volume_data, ignore_index=True)
-        combined_df['Volume'] = pd.to_numeric(combined_df['Volume'], errors='coerce')
-        combined_df.dropna(subset=['Date', 'Ticker', 'Volume'], inplace=True)
-
+for ticker in tickers:
+    df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
+    if not df.empty and 'Volume' in df.columns:
         try:
-            pivot_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
-            st.subheader("Top 3 Stocks by Average Daily Volume (Last Month)")
-            st.line_chart(pivot_df)
+            avg_volume = float(df['Volume'].mean())  # ✅ cast to float to avoid Series comparison error
+            avg_volumes.append((ticker, avg_volume))
         except Exception as e:
-            st.error(f"Pivot error: {e}")
-    else:
-        st.warning("No volume data available to display.")
+            st.warning(f"Could not process {ticker}: {e}")
+
+# Sort and select top 3 tickers
+top3_tickers = [t[0] for t in sorted(avg_volumes, key=lambda x: x[1], reverse=True)[:3]]
+
+# Retrieve and compile daily volume data for these 3 tickers
+volume_data = []
+for ticker in top3_tickers:
+    df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
+    if not df.empty:
+        df = df[['Volume']].copy()
+        df['Ticker'] = ticker
+        df['Date'] = df.index
+        volume_data.append(df)
+
+# Plotting
+if volume_data:
+    combined_df = pd.concat(volume_data, ignore_index=True)
+    combined_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
+    
+    st.subheader("📈 Volume Over the Last Month (Top 3 Stocks)")
+    st.line_chart(combined_df)
+else:
+    st.warning("No volume data available to display.")
 
 # -------------------- Tab 2: User Input --------------------
 elif page == "User Input":
