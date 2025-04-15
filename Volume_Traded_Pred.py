@@ -1,25 +1,27 @@
 import streamlit as st
-import yfinance as yf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import yfinance as yf
 import requests
 import time
 
-# -------------------- Config --------------------
 st.set_page_config(page_title="Stock Volume Prediction App", layout="wide")
 
-# -------------------- Tabs --------------------
-tab1, tab2, tab3, tab4 = st.tabs([
-    "\U0001F4C8 Top Traded Stocks",
-    "\U0001F9E0 User Input",
-    "\U0001F52E Prediction Output",
-    "\U0001F4CA Model Explainability"
+# -------------------- Sidebar Navigation --------------------
+st.sidebar.title("🔎 Navigation")
+page = st.sidebar.radio("Go to", [
+    "Top Traded Stocks",
+    "User Input",
+    "Prediction Output",
+    "Model Explainability"
 ])
 
-# -------------------- Tab 1: Top 3 Most Traded Stocks --------------------
-with tab1:
+st.title("📊 Stock Volume Prediction App")
+
+# -------------------- Tab 1 --------------------
+if page == "Top Traded Stocks":
     st.header("Top 3 Most Traded Stocks Over the Past Month")
 
     API_KEY = "CXW22KLIBXMMW6KU"
@@ -28,13 +30,18 @@ with tab1:
 
     def get_avg_volume(ticker):
         params = {
-            "function": "TIME_SERIES_DAILY_ADJUSTED",
+            "function": "TIME_SERIES_DAILY",
             "symbol": ticker,
             "outputsize": "compact",
             "apikey": API_KEY
         }
         response = requests.get(ALPHA_URL, params=params)
         data = response.json()
+
+        if 'Time Series (Daily)' not in data:
+            st.warning(f"Error processing {ticker}: {data.get('Note') or data.get('Information') or 'Unexpected format'}")
+            return None
+
         try:
             df = pd.DataFrame(data['Time Series (Daily)']).T
             df.index = pd.to_datetime(df.index)
@@ -42,7 +49,7 @@ with tab1:
             last_30 = df[df.index >= pd.to_datetime("today") - pd.Timedelta(days=30)]
             return last_30['6. volume'].mean()
         except Exception as e:
-            st.warning(f"Error processing {ticker}: {e}")
+            st.warning(f"Error parsing data for {ticker}: {e}")
             return None
 
     avg_volumes = []
@@ -75,8 +82,8 @@ with tab1:
     else:
         st.warning("No volume data available to display.")
 
-# -------------------- Tab 2: User Input --------------------
-with tab2:
+# -------------------- Tab 2 --------------------
+elif page == "User Input":
     st.header("Select Stock and Time Range")
     ticker = st.text_input("Enter stock ticker:", value="TSLA")
     start = st.date_input("Start date", value=pd.to_datetime("2022-01-01"))
@@ -89,21 +96,18 @@ with tab2:
             st.success("Data loaded successfully!")
             st.dataframe(user_data.tail())
 
-            st.subheader("\U0001F4C8 Volume Chart")
+            st.subheader("📈 Volume Chart")
             st.line_chart(user_data['Volume'])
         else:
             st.error("No data found for the selected inputs.")
 
-# -------------------- Tab 3: Prediction Output --------------------
-with tab3:
+# -------------------- Tab 3 --------------------
+elif page == "Prediction Output":
     st.header("Prediction Model Output")
 
     if 'user_data' in locals() and not user_data.empty:
         user_data = user_data.dropna(subset=["Volume"])
-
-        random_factors_raw = np.random.uniform(low=0.95, high=1.05, size=user_data.shape[0])
-        random_factors = pd.Series(random_factors_raw, index=user_data.index)
-
+        random_factors = pd.Series(np.random.uniform(0.95, 1.05, len(user_data)), index=user_data.index)
         predicted = user_data['Volume'].shift(1).fillna(method='bfill') * random_factors
         user_data['Predicted Volume'] = predicted
 
@@ -116,8 +120,8 @@ with tab3:
     else:
         st.info("Load data to see prediction output.")
 
-# -------------------- Tab 4: Feature Importance --------------------
-with tab4:
+# -------------------- Tab 4 --------------------
+elif page == "Model Explainability":
     st.header("Feature Importance (Model Explainability)")
 
     features = ['Lag_1_Volume', 'Price_Change', 'Moving_Avg_7d', 'RSI', 'MACD']
@@ -131,6 +135,3 @@ with tab4:
     st.pyplot(fig)
 
     st.caption("_Note: Replace simulated predictions and importances with real model outputs when ready._")
-
-st.markdown("_Note: Replace simulated predictions and importances with real model outputs when ready._") 
-
