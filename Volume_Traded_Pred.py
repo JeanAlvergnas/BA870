@@ -40,25 +40,17 @@ elif page == "2. Top Traded Stocks in the Past Month":
     start_date = end_date - pd.Timedelta(days=90)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    volume_data = {}
-
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
-            df['Volume'] = df['Volume'] / 1e6
+            df['Volume'] = df['Volume'] / 1e6  # Convert to millions
             ax.plot(df.index, df['Volume'], label=ticker)
-            volume_data[ticker] = df[['Volume']].copy()
 
     ax.set_title("Volume Traded Over the Past 3 Months (in Millions)")
     ax.set_xlabel("Date")
     ax.set_ylabel("Volume (Millions)")
     ax.legend()
     st.pyplot(fig)
-
-    st.subheader("📋 Raw Data Preview")
-    for ticker, data in volume_data.items():
-        st.markdown(f"**{ticker}**")
-        st.dataframe(data.tail())
 
 # 3. User Input
 elif page == "3. User Input":
