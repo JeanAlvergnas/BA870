@@ -17,7 +17,7 @@ page = st.sidebar.radio("Navigate", [
 
 # 1. Team & App Overview
 if page == "1. Team & App Overview":
-    st.title("📘 Volume Prediction After Financial Releases")
+    st.title("\U0001F4D8 Volume Prediction After Financial Releases")
     st.markdown("""
     **Team Members:**
     - Jean Alvergnas  
@@ -25,14 +25,14 @@ if page == "1. Team & App Overview":
     - Michael Webber  
 
     **App Purpose:**
-    This Streamlit app predicts the volume of stock traded on the day following a financial release.
-    The goal is to leverage past volume behavior and key financial ratios (profitability, leverage, etc.)
+    This Streamlit app predicts the volume of stock traded on the day following a financial release. 
+    The goal is to leverage past volume behavior and key financial ratios (profitability, leverage, etc.) 
     to anticipate trading activity after earnings announcements.
     """)
 
 # 2. Volume Prediction After Financials
-elif page == "Volume Prediction After Financials":
-    st.title("📊 Volume Prediction After Financials")
+elif page == "2. Volume Prediction After Financials":
+    st.title("\U0001F4C8 Volume Prediction After Financials")
     st.markdown("This section displays volume trends for top traded stocks to illustrate the app’s intended future predictive use after financial releases.")
 
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
@@ -87,7 +87,7 @@ elif page == "Volume Prediction After Financials":
 
 # 3. User Input
 elif page == "3. User Input":
-    st.header("📥 User Input")
+    st.header("\U0001F4E5 User Input")
     ticker = st.text_input("Enter stock ticker:", value="TSLA")
     start = st.date_input("Start date", value=pd.to_datetime("2022-01-01"))
     end = st.date_input("End date", value=pd.to_datetime("today"))
@@ -98,14 +98,14 @@ elif page == "3. User Input":
         if not user_data.empty:
             st.success("Data loaded successfully!")
             st.dataframe(user_data.tail())
-            st.subheader("📈 Volume Chart")
+            st.subheader("\U0001F4C8 Volume Chart")
             st.line_chart(user_data['Volume'])
         else:
             st.error("No data found for the selected inputs.")
 
 # 4. Prediction Output
 elif page == "4. Prediction Output":
-    st.header("📊 Prediction Model Output")
+    st.header("\U0001F4CA Prediction Model Output")
     ticker = st.text_input("Ticker for prediction:", value="TSLA")
     start = pd.to_datetime("2023-01-01")
     end = pd.to_datetime("today")
@@ -117,7 +117,7 @@ elif page == "4. Prediction Output":
         predicted = user_data['Volume'].shift(1).fillna(method='bfill') * random_factors
         user_data['Predicted Volume'] = predicted
 
-        st.subheader("📉 Actual vs Predicted Volume")
+        st.subheader("\U0001F4C9 Actual vs Predicted Volume")
         fig, ax = plt.subplots()
         ax.plot(user_data.index, user_data['Volume'], label='Actual Volume')
         ax.plot(user_data.index, user_data['Predicted Volume'], label='Predicted Volume', linestyle='--')
@@ -128,7 +128,7 @@ elif page == "4. Prediction Output":
 
 # 5. Feature Importance
 elif page == "5. Feature Importance":
-    st.header("📌 Feature Importance (Simulated)")
+    st.header("\U0001F4CC Feature Importance (Simulated)")
     features = ['Lag_1_Volume', 'Price_Change', 'Moving_Avg_7d', 'RSI', 'MACD']
     importances = np.random.dirichlet(np.ones(len(features)), size=1)[0]
     importance_df = pd.DataFrame({'Feature': features, 'Importance': importances})
