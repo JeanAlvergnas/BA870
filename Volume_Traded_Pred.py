@@ -17,7 +17,7 @@ page = st.sidebar.radio("Navigate", [
 
 # 1. Team & App Overview
 if page == "1. Team & App Overview":
-    st.title("\U0001F4D8 Volume Prediction After Financial Releases")
+    st.title("📘 Volume Prediction After Financial Releases")
     st.markdown("""
     **Team Members:**
     - Jean Alvergnas  
@@ -32,35 +32,38 @@ if page == "1. Team & App Overview":
 
 # 2. Top Traded Stocks in the Past 3 Months
 elif page == "2. Top Traded Stocks in the Past 3 Months":
-    st.title("\U0001F4C8 Top 5 Traded Stocks in the Past 3 Months")
+    st.title("📈 Top 5 Traded Stocks in the Past 3 Months")
     st.markdown("Displays the daily volume traded over the past 90 days for 5 selected major stocks.")
 
     tickers = ['AAPL', 'MSFT', 'TSLA', 'NVDA', 'GOOGL']
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=90)
 
-    fig, ax = plt.subplots(figsize=(12, 7))
+    fig, ax = plt.subplots(figsize=(12, 6))
     combined_df = pd.DataFrame()
 
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
+            df = df[['Volume']].copy()
+            df['Date'] = df.index
             df['Ticker'] = ticker
+            df['Volume'] = df['Volume'] / 1_000_000  # Convert to millions
+            ax.plot(df['Date'], df['Volume'], label=ticker)
             combined_df = pd.concat([combined_df, df])
-            ax.plot(df.index, df['Volume']/1e6, label=ticker)  # Dividing by 1 million
 
-    ax.set_title("Volume Traded (in Millions) Over the Past 3 Months")
+    ax.set_title("Daily Volume Traded (in Millions)", fontsize=16)
     ax.set_xlabel("Date")
     ax.set_ylabel("Volume (Millions)")
     ax.legend()
     st.pyplot(fig)
 
-    st.subheader("\U0001F4C9 Raw Data Preview")
-    st.dataframe(combined_df[['Ticker', 'Volume']].head())
+    st.subheader("📋 Raw Data Preview")
+    st.dataframe(combined_df.head())
 
 # 3. User Input
 elif page == "3. User Input":
-    st.header("\U0001F4E5 User Input")
+    st.header("📥 User Input")
     ticker = st.text_input("Enter stock ticker:", value="TSLA")
     start = st.date_input("Start date", value=pd.to_datetime("2022-01-01"))
     end = st.date_input("End date", value=pd.to_datetime("today"))
@@ -71,14 +74,14 @@ elif page == "3. User Input":
         if not user_data.empty:
             st.success("Data loaded successfully!")
             st.dataframe(user_data.tail())
-            st.subheader("\U0001F4C8 Volume Chart")
+            st.subheader("📈 Volume Chart")
             st.line_chart(user_data['Volume'])
         else:
             st.error("No data found for the selected inputs.")
 
 # 4. Prediction Output
 elif page == "4. Prediction Output":
-    st.header("\U0001F4CA Prediction Model Output")
+    st.header("📊 Prediction Model Output")
     ticker = st.text_input("Ticker for prediction:", value="TSLA")
     start = pd.to_datetime("2023-01-01")
     end = pd.to_datetime("today")
@@ -90,7 +93,7 @@ elif page == "4. Prediction Output":
         predicted = user_data['Volume'].shift(1).fillna(method='bfill') * random_factors
         user_data['Predicted Volume'] = predicted
 
-        st.subheader("\U0001F4C9 Actual vs Predicted Volume")
+        st.subheader("📉 Actual vs Predicted Volume")
         fig, ax = plt.subplots()
         ax.plot(user_data.index, user_data['Volume'], label='Actual Volume')
         ax.plot(user_data.index, user_data['Predicted Volume'], label='Predicted Volume', linestyle='--')
@@ -101,7 +104,7 @@ elif page == "4. Prediction Output":
 
 # 5. Feature Importance
 elif page == "5. Feature Importance":
-    st.header("\U0001F4CB Feature Importance (Simulated)")
+    st.header("📌 Feature Importance (Simulated)")
     features = ['Lag_1_Volume', 'Price_Change', 'Moving_Avg_7d', 'RSI', 'MACD']
     importances = np.random.dirichlet(np.ones(len(features)), size=1)[0]
     importance_df = pd.DataFrame({'Feature': features, 'Importance': importances})
