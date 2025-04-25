@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Stock Volume App", layout="wide")
+st.set_page_config(page_title="Stock Volume Prediction App", layout="wide")
 
 # Sidebar for navigation
 page = st.sidebar.radio("Navigate", [
@@ -17,7 +17,7 @@ page = st.sidebar.radio("Navigate", [
 
 # 1. Team & App Overview
 if page == "1. Team & App Overview":
-    st.title("\U0001F4D8 Volume Prediction After Financial Releases")
+    st.title("📘 Volume Prediction After Financial Releases")
     st.markdown("""
     **Team Members:**
     - Jean Alvergnas  
@@ -25,54 +25,50 @@ if page == "1. Team & App Overview":
     - Michael Webber  
 
     **App Purpose:**
-    This Streamlit app predicts the volume of stock traded on the day following a financial release.
-    The goal is to leverage past volume behavior and key financial ratios (profitability, leverage, etc.)
+    This Streamlit app predicts the volume of stock traded on the day following a financial release. 
+    The goal is to leverage past volume behavior and key financial ratios (profitability, leverage, etc.) 
     to anticipate trading activity after earnings announcements.
     """)
 
 # 2. Top Traded Stocks in the Past Month
 elif page == "2. Top Traded Stocks in the Past Month":
-    st.title("\U0001F4C8 Top 3 Traded Stocks in the Past Month")
+    st.title("📈 Top 3 Traded Stocks in the Past Month")
+    st.markdown("This section shows daily volume traded for the 3 stocks with the highest average volume over the past month.")
 
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=30)
 
     avg_volumes = []
-    volume_data = []
+    ticker_data = {}
 
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-        if not df.empty and "Volume" in df.columns:
-            avg_volume = float(df["Volume"].mean())
+        if not df.empty and 'Volume' in df.columns:
+            avg_volume = df['Volume'].mean()
             avg_volumes.append((ticker, avg_volume))
-            df = df[["Volume"]].copy()
-            df["Date"] = df.index
-            df["Ticker"] = ticker
-            volume_data.append(df)
+            ticker_data[ticker] = df
 
     if avg_volumes:
-        avg_df = pd.DataFrame(avg_volumes, columns=['Ticker', 'AvgVolume'])
-        top3 = avg_df.sort_values(by='AvgVolume', ascending=False).head(3)['Ticker'].tolist()
-        top3_data = [df for df in volume_data if df['Ticker'].iloc[0] in top3]
+        top3_tickers = sorted(avg_volumes, key=lambda x: x[1], reverse=True)[:3]
+        top3_names = [t[0] for t in top3_tickers]
 
-        if top3_data:
-            combined_df = pd.concat(top3_data)
-            combined_df['Date'] = pd.to_datetime(combined_df['Date'])
-            combined_df['Ticker'] = combined_df['Ticker'].astype(str)
-            combined_df['Volume'] = pd.to_numeric(combined_df['Volume'], errors='coerce')
-            combined_df.dropna(subset=['Volume'], inplace=True)
+        fig, ax = plt.subplots()
+        for ticker in top3_names:
+            df = ticker_data[ticker]
+            ax.plot(df.index, df['Volume'], label=ticker)
 
-            pivot_df = combined_df.pivot_table(index='Date', columns='Ticker', values='Volume')
-            st.line_chart(pivot_df)
-        else:
-            st.warning("No valid data for top 3 tickers.")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Volume Traded")
+        ax.set_title("Top 3 Stocks by Volume - Past Month")
+        ax.legend()
+        st.pyplot(fig)
     else:
-        st.warning("No data available to rank top traded stocks.")
+        st.warning("No data available to display.")
 
 # 3. User Input
 elif page == "3. User Input":
-    st.header("\U0001F4E5 User Input")
+    st.header("📥 User Input")
     ticker = st.text_input("Enter stock ticker:", value="TSLA")
     start = st.date_input("Start date", value=pd.to_datetime("2022-01-01"))
     end = st.date_input("End date", value=pd.to_datetime("today"))
@@ -83,15 +79,15 @@ elif page == "3. User Input":
         if not user_data.empty:
             st.success("Data loaded successfully!")
             st.dataframe(user_data.tail())
-            st.subheader("\U0001F4C9 Volume Chart")
+            st.subheader("📈 Volume Chart")
             st.line_chart(user_data['Volume'])
         else:
             st.error("No data found for the selected inputs.")
 
 # 4. Prediction Output
 elif page == "4. Prediction Output":
-    st.header("\U0001F4CA Prediction Model Output")
-    ticker = st.text_input("Ticker for prediction:", value="TSLA")
+    st.header("📊 Prediction Model Output")
+    ticker = st.text_input("Ticker for prediction:", value="TSLA", key="predict_ticker")
     start = pd.to_datetime("2023-01-01")
     end = pd.to_datetime("today")
     user_data = yf.download(ticker, start=start, end=end, interval='1d')
@@ -102,7 +98,7 @@ elif page == "4. Prediction Output":
         predicted = user_data['Volume'].shift(1).fillna(method='bfill') * random_factors
         user_data['Predicted Volume'] = predicted
 
-        st.subheader("\U0001F4C8 Actual vs Predicted Volume")
+        st.subheader("📉 Actual vs Predicted Volume")
         fig, ax = plt.subplots()
         ax.plot(user_data.index, user_data['Volume'], label='Actual Volume')
         ax.plot(user_data.index, user_data['Predicted Volume'], label='Predicted Volume', linestyle='--')
@@ -113,7 +109,7 @@ elif page == "4. Prediction Output":
 
 # 5. Feature Importance
 elif page == "5. Feature Importance":
-    st.header("\U0001F4CB Feature Importance (Simulated)")
+    st.header("📌 Feature Importance (Simulated)")
     features = ['Lag_1_Volume', 'Price_Change', 'Moving_Avg_7d', 'RSI', 'MACD']
     importances = np.random.dirichlet(np.ones(len(features)), size=1)[0]
     importance_df = pd.DataFrame({'Feature': features, 'Importance': importances})
