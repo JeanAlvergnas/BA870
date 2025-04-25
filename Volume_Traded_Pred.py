@@ -30,12 +30,12 @@ if page == "1. Team & App Overview":
     to anticipate trading activity after earnings announcements.
     """)
 
-# 2. Volume Prediction After Financials (Showcase)
-elif page == "2. Volume Prediction After Financials":
-    st.title("📈 Volume Traded Overview (Last Month)")
-    st.markdown("This section showcases how the app can help users understand recent trading behavior.")
+# 2. Volume Prediction After Financials
+elif page == "Volume Prediction After Financials":
+    st.title("📊 Volume Prediction After Financials")
+    st.markdown("This section displays volume trends for top traded stocks to illustrate the app’s intended future predictive use after financial releases.")
 
-    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
+    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=30)
 
@@ -44,35 +44,46 @@ elif page == "2. Volume Prediction After Financials":
 
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-        if not df.empty and "Volume" in df.columns:
-            avg_volume = float(df["Volume"].mean())
-            avg_volumes.append((ticker, avg_volume))
-            df = df[["Volume"]].copy()
-            df["Date"] = df.index
-            df["Ticker"] = ticker
-            volume_data.append(df)
+        if not df.empty:
+            if 'Volume' in df.columns:
+                avg_volume = float(df['Volume'].mean())
+                avg_volumes.append((ticker, avg_volume))
+                df = df[['Volume']].copy()
+                df['Date'] = df.index
+                df['Ticker'] = ticker
+                volume_data.append(df)
+            else:
+                st.warning(f"Volume column missing for {ticker}")
+        else:
+            st.warning(f"No data available for {ticker}")
 
     if avg_volumes:
         avg_df = pd.DataFrame(avg_volumes, columns=['Ticker', 'AvgVolume'])
         top3 = avg_df.sort_values(by='AvgVolume', ascending=False).head(3)['Ticker'].tolist()
+
         top3_data = [df for df in volume_data if df['Ticker'].iloc[0] in top3]
 
         if top3_data:
             combined_df = pd.concat(top3_data)
             combined_df['Date'] = pd.to_datetime(combined_df['Date'])
             combined_df['Ticker'] = combined_df['Ticker'].astype(str)
-            combined_df['Volume'] = pd.to_numeric(combined_df['Volume'], errors='coerce')
-            combined_df.dropna(subset=['Volume'], inplace=True)
 
-            if {'Date', 'Ticker', 'Volume'}.issubset(combined_df.columns):
-                pivot_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
-                st.line_chart(pivot_df)
+            if 'Volume' in combined_df.columns:
+                combined_df['Volume'] = pd.to_numeric(combined_df['Volume'], errors='coerce')
+                combined_df.dropna(subset=['Volume'], inplace=True)
+
+                if {'Date', 'Ticker', 'Volume'}.issubset(combined_df.columns):
+                    pivot_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
+                    st.subheader("Daily Volume for Top 3 Stocks (Past Month)")
+                    st.line_chart(pivot_df)
+                else:
+                    st.warning("Missing necessary columns after cleaning.")
             else:
-                st.warning("Missing columns for pivot.")
+                st.warning("Volume column missing after processing.")
         else:
-            st.warning("No valid data for top 3 tickers.")
+            st.warning("No valid top 3 stock data available.")
     else:
-        st.warning("No data available to rank top traded stocks.")
+        st.warning("No average volume data could be calculated.")
 
 # 3. User Input
 elif page == "3. User Input":
