@@ -31,35 +31,35 @@ if page == "1. Team & App Overview":
     """)
 
 # 2. Top Traded Stocks in the Past 3 Months
-elif page == "2. Top Traded Stocks in the Past 3 Months":
-    st.title("📈 Top 5 Traded Stocks in the Past 3 Months")
+elif page == "2. Top Traded Stocks in the Past Month":
+    st.title("📈 Top 5 Traded Stocks in the Past Month")
     st.markdown("Displays the daily volume traded over the past 90 days for 5 selected major stocks.")
 
     tickers = ['AAPL', 'MSFT', 'TSLA', 'NVDA', 'GOOGL']
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=90)
 
-    fig, ax = plt.subplots(figsize=(12, 6))
-    combined_df = pd.DataFrame()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    volume_tables = {}
 
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
-            df = df[['Volume']].copy()
-            df['Date'] = df.index
-            df['Ticker'] = ticker
-            df['Volume'] = df['Volume'] / 1_000_000  # Convert to millions
-            ax.plot(df['Date'], df['Volume'], label=ticker)
-            combined_df = pd.concat([combined_df, df])
+            df['Volume'] = df['Volume'] / 1_000_000  # convert to millions
+            ax.plot(df.index, df['Volume'], label=ticker)
+            df_display = df[['Volume']].copy()
+            df_display.reset_index(inplace=True)
+            volume_tables[ticker] = df_display.rename(columns={'Volume': f"{ticker} Volume (M)"})
 
-    ax.set_title("Daily Volume Traded (in Millions)", fontsize=16)
+    ax.set_title("Volume Traded Over the Past 90 Days")
     ax.set_xlabel("Date")
     ax.set_ylabel("Volume (Millions)")
     ax.legend()
     st.pyplot(fig)
 
-    st.subheader("📋 Raw Data Preview")
-    st.dataframe(combined_df.head())
+    for ticker, table in volume_tables.items():
+        st.subheader(f"📄 Raw Volume Data for {ticker}")
+        st.dataframe(table)
 
 # 3. User Input
 elif page == "3. User Input":
