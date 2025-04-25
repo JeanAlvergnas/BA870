@@ -32,25 +32,24 @@ if page == "1. Team & App Overview":
 
 # 2. Top Traded Stocks in the Past Month
 elif page == "2. Top Traded Stocks in the Past Month":
-    st.title("📈 Top 3 Traded Stocks in the Past Month")
-    st.markdown("Displays the daily volume traded over the past 30 days for 3 selected major stocks.")
+    st.title("📈 Top 5 Traded Stocks in the Past Month")
+    st.markdown("Displays the daily volume traded over the past 30 days for the 5 selected major stocks.")
 
-    tickers = ['AAPL', 'MSFT', 'TSLA']
+    tickers = ['AAPL', 'MSFT', 'TSLA', 'NVDA', 'GOOGL']
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=30)
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(12, 7))
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
             ax.plot(df.index, df['Volume'], label=ticker)
 
-    ax.set_title("Volume Traded Over the Past 30 Days")
+    ax.set_title("Volume Traded Over the Past 30 Days (Top 5 Stocks)")
     ax.set_xlabel("Date")
     ax.set_ylabel("Volume")
     ax.legend()
     st.pyplot(fig)
-
 # 3. User Input
 elif page == "3. User Input":
     st.header("📥 User Input")
