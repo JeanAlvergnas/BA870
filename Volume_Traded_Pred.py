@@ -8,16 +8,15 @@ st.set_page_config(page_title="Stock Volume App", layout="wide")
 
 # Sidebar for navigation
 page = st.sidebar.radio("Navigate", [
-    "Team & App Overview",
-    "Top Traded Stocks in the Past Month",
-    "Volume Prediction After Financials",
-    "User Input",
-    "Prediction Output",
-    "Feature Importance"
+    "1. Team & App Overview",
+    "2. Volume Prediction After Financials",
+    "3. User Input",
+    "4. Prediction Output",
+    "5. Feature Importance"
 ])
 
 # 1. Team & App Overview
-if page == "Team & App Overview":
+if page == "1. Team & App Overview":
     st.title("📘 Volume Prediction After Financial Releases")
     st.markdown("""
     **Team Members:**
@@ -26,15 +25,15 @@ if page == "Team & App Overview":
     - Michael Webber  
 
     **App Purpose:**
-    This Streamlit app predicts the volume of stock traded on the day following a financial release. 
-    The goal is to leverage past volume behavior and key financial ratios (profitability, leverage, etc.) 
+    This Streamlit app predicts the volume of stock traded on the day following a financial release.
+    The goal is to leverage past volume behavior and key financial ratios (profitability, leverage, etc.)
     to anticipate trading activity after earnings announcements.
     """)
 
-# 2. Top Traded Stocks in the Past Month
-elif page == "Top Traded Stocks in the Past Month":
-    st.title("📈 Top 3 Traded Stocks in the Past Month")
-    st.markdown("This section displays the daily volume traded over the past 30 days for the top 3 stocks by volume.")
+# 2. Volume Prediction After Financials (Showcase)
+elif page == "2. Volume Prediction After Financials":
+    st.title("📈 Volume Traded Overview (Last Month)")
+    st.markdown("This section showcases how the app can help users understand recent trading behavior.")
 
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
     end_date = pd.to_datetime("today")
@@ -62,17 +61,11 @@ elif page == "Top Traded Stocks in the Past Month":
             combined_df = pd.concat(top3_data)
             combined_df['Date'] = pd.to_datetime(combined_df['Date'])
             combined_df['Ticker'] = combined_df['Ticker'].astype(str)
-
-            if 'Volume' in combined_df.columns:
-                if isinstance(combined_df['Volume'], pd.DataFrame):
-                    combined_df['Volume'] = pd.to_numeric(combined_df['Volume'].iloc[:, 0], errors='coerce')
-                else:
-                    combined_df['Volume'] = pd.to_numeric(combined_df['Volume'], errors='coerce')
-
+            combined_df['Volume'] = pd.to_numeric(combined_df['Volume'], errors='coerce')
             combined_df.dropna(subset=['Volume'], inplace=True)
 
             if {'Date', 'Ticker', 'Volume'}.issubset(combined_df.columns):
-                pivot_df = combined_df.pivot_table(index='Date', columns='Ticker', values='Volume')
+                pivot_df = combined_df.pivot(index='Date', columns='Ticker', values='Volume')
                 st.line_chart(pivot_df)
             else:
                 st.warning("Missing columns for pivot.")
@@ -81,13 +74,8 @@ elif page == "Top Traded Stocks in the Past Month":
     else:
         st.warning("No data available to rank top traded stocks.")
 
-# 3. Volume Prediction After Financials (Placeholder)
-elif page == "Volume Prediction After Financials":
-    st.title("📊 Volume Prediction After Financials")
-    st.markdown("This section will eventually use business ratios and past volumes to predict trading volume after earnings releases.")
-
-# 4. User Input
-elif page == "User Input":
+# 3. User Input
+elif page == "3. User Input":
     st.header("📥 User Input")
     ticker = st.text_input("Enter stock ticker:", value="TSLA")
     start = st.date_input("Start date", value=pd.to_datetime("2022-01-01"))
@@ -104,8 +92,8 @@ elif page == "User Input":
         else:
             st.error("No data found for the selected inputs.")
 
-# 5. Prediction Output
-elif page == "Prediction Output":
+# 4. Prediction Output
+elif page == "4. Prediction Output":
     st.header("📊 Prediction Model Output")
     ticker = st.text_input("Ticker for prediction:", value="TSLA")
     start = pd.to_datetime("2023-01-01")
@@ -127,8 +115,8 @@ elif page == "Prediction Output":
     else:
         st.warning("No data to display prediction.")
 
-# 6. Feature Importance
-elif page == "Feature Importance":
+# 5. Feature Importance
+elif page == "5. Feature Importance":
     st.header("📌 Feature Importance (Simulated)")
     features = ['Lag_1_Volume', 'Price_Change', 'Moving_Avg_7d', 'RSI', 'MACD']
     importances = np.random.dirichlet(np.ones(len(features)), size=1)[0]
