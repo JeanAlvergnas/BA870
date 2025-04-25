@@ -47,8 +47,8 @@ elif page == "2. Top Traded Stocks in the Past Month":
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
             df['Ticker'] = ticker
-            combined_df = pd.concat([combined_df, df[['Volume']].assign(Ticker=ticker)], ignore_index=False)
-            # Plot volume in millions
+            df['Date'] = df.index  # Add Date explicitly
+            combined_df = pd.concat([combined_df, df[['Date', 'Ticker', 'Volume']]], ignore_index=True)
             ax.plot(df.index, df['Volume'] / 1e6, label=ticker)
 
     ax.set_title("Volume Traded Over the Past 30 Days (Top 5 Stocks)", fontsize=16)
@@ -58,9 +58,9 @@ elif page == "2. Top Traded Stocks in the Past Month":
     ax.grid(True)
     st.pyplot(fig)
 
-    # Display table
-    st.subheader("📋 Raw Volume Data (Last 30 Days)")
-    st.dataframe(combined_df.tail(20))  # Show last 20 entries for readability
+    # 📋 Show the table properly now
+    st.subheader("📋 Volume Data Over the Past Month (Last 20 Observations)")
+    st.dataframe(combined_df.tail(20))  # Now correctly displays Date, Ticker, Volume
 # 3. User Input
 elif page == "3. User Input":
     st.header("📥 User Input")
