@@ -39,17 +39,28 @@ elif page == "2. Top Traded Stocks in the Past Month":
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=30)
 
+    combined_df = pd.DataFrame()
+
     fig, ax = plt.subplots(figsize=(12, 7))
+
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
-            ax.plot(df.index, df['Volume'], label=ticker)
+            df['Ticker'] = ticker
+            combined_df = pd.concat([combined_df, df[['Volume']].assign(Ticker=ticker)], ignore_index=False)
+            # Plot volume in millions
+            ax.plot(df.index, df['Volume'] / 1e6, label=ticker)
 
-    ax.set_title("Volume Traded Over the Past 30 Days (Top 5 Stocks)")
-    ax.set_xlabel("Date")
-    ax.set_ylabel("Volume")
+    ax.set_title("Volume Traded Over the Past 30 Days (Top 5 Stocks)", fontsize=16)
+    ax.set_xlabel("Date", fontsize=12)
+    ax.set_ylabel("Volume (Millions)", fontsize=12)
     ax.legend()
+    ax.grid(True)
     st.pyplot(fig)
+
+    # Display table
+    st.subheader("📋 Raw Volume Data (Last 30 Days)")
+    st.dataframe(combined_df.tail(20))  # Show last 20 entries for readability
 # 3. User Input
 elif page == "3. User Input":
     st.header("📥 User Input")
