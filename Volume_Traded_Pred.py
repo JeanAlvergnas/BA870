@@ -32,34 +32,33 @@ if page == "1. Team & App Overview":
 
 # 2. Top Traded Stocks in the Past 3 Months
 elif page == "2. Top Traded Stocks in the Past Month":
-    st.title("📈 Top 5 Traded Stocks in the Past Month")
-    st.markdown("Displays the daily volume traded over the past 90 days for 5 selected major stocks.")
+    st.title("📈 Top 5 Traded Stocks in the Past 3 Months")
+    st.markdown("Displays the daily volume traded over the past 3 months for 5 selected major stocks.")
 
     tickers = ['AAPL', 'MSFT', 'TSLA', 'NVDA', 'GOOGL']
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=90)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    volume_tables = {}
+    volume_data = {}
 
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
         if not df.empty:
-            df['Volume'] = df['Volume'] / 1_000_000  # convert to millions
+            df['Volume'] = df['Volume'] / 1e6
             ax.plot(df.index, df['Volume'], label=ticker)
-            df_display = df[['Volume']].copy()
-            df_display.reset_index(inplace=True)
-            volume_tables[ticker] = df_display.rename(columns={'Volume': f"{ticker} Volume (M)"})
+            volume_data[ticker] = df[['Volume']].copy()
 
-    ax.set_title("Volume Traded Over the Past 90 Days")
+    ax.set_title("Volume Traded Over the Past 3 Months (in Millions)")
     ax.set_xlabel("Date")
     ax.set_ylabel("Volume (Millions)")
     ax.legend()
     st.pyplot(fig)
 
-    for ticker, table in volume_tables.items():
-        st.subheader(f"📄 Raw Volume Data for {ticker}")
-        st.dataframe(table)
+    st.subheader("📋 Raw Data Preview")
+    for ticker, data in volume_data.items():
+        st.markdown(f"**{ticker}**")
+        st.dataframe(data.tail())
 
 # 3. User Input
 elif page == "3. User Input":
