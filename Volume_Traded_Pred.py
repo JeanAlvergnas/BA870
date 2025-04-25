@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Stock Volume Prediction App", layout="wide")
+st.set_page_config(page_title="Stock Volume App", layout="wide")
 
 # Sidebar for navigation
 page = st.sidebar.radio("Navigate", [
@@ -25,46 +25,31 @@ if page == "1. Team & App Overview":
     - Michael Webber  
 
     **App Purpose:**
-    This Streamlit app predicts the volume of stock traded on the day following a financial release. 
-    The goal is to leverage past volume behavior and key financial ratios (profitability, leverage, etc.) 
+    This Streamlit app predicts the volume of stock traded on the day following a financial release.  
+    The goal is to leverage past volume behavior and key financial ratios (profitability, leverage, etc.)  
     to anticipate trading activity after earnings announcements.
     """)
 
 # 2. Top Traded Stocks in the Past Month
 elif page == "2. Top Traded Stocks in the Past Month":
     st.title("📈 Top 3 Traded Stocks in the Past Month")
-    st.markdown("This section shows daily volume traded for the 3 stocks with the highest average volume over the past month.")
+    st.markdown("Displays the daily volume traded over the past 30 days for 3 selected major stocks.")
 
-    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'NFLX', 'AMD']
+    tickers = ['AAPL', 'MSFT', 'TSLA']
     end_date = pd.to_datetime("today")
     start_date = end_date - pd.Timedelta(days=30)
 
-    avg_volumes = []
-    ticker_data = {}
-
+    fig, ax = plt.subplots(figsize=(10, 6))
     for ticker in tickers:
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-        if not df.empty and 'Volume' in df.columns:
-            avg_volume = df['Volume'].mean()
-            avg_volumes.append((ticker, avg_volume))
-            ticker_data[ticker] = df
-
-    if avg_volumes:
-        top3_tickers = sorted(avg_volumes, key=lambda x: x[1], reverse=True)[:3]
-        top3_names = [t[0] for t in top3_tickers]
-
-        fig, ax = plt.subplots()
-        for ticker in top3_names:
-            df = ticker_data[ticker]
+        if not df.empty:
             ax.plot(df.index, df['Volume'], label=ticker)
 
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Volume Traded")
-        ax.set_title("Top 3 Stocks by Volume - Past Month")
-        ax.legend()
-        st.pyplot(fig)
-    else:
-        st.warning("No data available to display.")
+    ax.set_title("Volume Traded Over the Past 30 Days")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Volume")
+    ax.legend()
+    st.pyplot(fig)
 
 # 3. User Input
 elif page == "3. User Input":
@@ -87,7 +72,7 @@ elif page == "3. User Input":
 # 4. Prediction Output
 elif page == "4. Prediction Output":
     st.header("📊 Prediction Model Output")
-    ticker = st.text_input("Ticker for prediction:", value="TSLA", key="predict_ticker")
+    ticker = st.text_input("Ticker for prediction:", value="TSLA")
     start = pd.to_datetime("2023-01-01")
     end = pd.to_datetime("today")
     user_data = yf.download(ticker, start=start, end=end, interval='1d')
