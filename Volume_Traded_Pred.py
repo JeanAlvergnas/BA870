@@ -18,31 +18,39 @@ page = st.sidebar.radio("Navigate", [
 # 1. Team & App Overview
 if page == "1. Team & App Overview":
     st.title("📘 Volume Prediction After Financial Releases")
+
+    st.subheader("Team Members")
     st.markdown("""
-    **Team Members:**
-    - Quan Nguyen  
-    - Michael Webber  
-    - Jean Alvergnas  
+    - **Quan Nguyen**  
+    - **Michael Webber**  
+    - **Jean Alvergnas**
+    """)
 
-    **App Purpose:**
+    st.subheader("🎯 App Purpose")
+    st.markdown("""
     This Streamlit app predicts the volume of stock traded on the day following a financial release.  
-    The goal is to leverage past volume behavior and key financial ratios to anticipate trading activity after earnings announcements.
+    It leverages past trading behavior and key financial ratios to anticipate activity after earnings announcements.
+    """)
 
-    Why is that of any interest? 
+    st.subheader("💡 Why is This Valuable?")
+    st.markdown("""
+    - **Signal Strength of Market Reaction**  
+      ➔ Big volume spikes show how strongly investors react to earnings — even before the price changes.
 
-    •	Signal Strength of Market Reaction
-➔ Big volume spikes show how strongly investors react to earnings — even before the price changes.
-	•	Help Large Investors Manage Liquidity
-➔ High volume days make it easier for funds to buy/sell large amounts without moving the stock too much.
-	•	Improve Short-Term Trading Strategies
-➔ Traders love volume surges for breakouts, reversals, and momentum trades right after financial releases.
-	•	Better Risk Management
-➔ High volume usually means higher volatility — knowing it in advance helps adjust positions or hedge risks.
-	•	Power Event-Driven Strategies
-➔ Funds that trade around earnings events use expected volume to decide if an opportunity is big enough.
-    • We Wanted an App with Useful and Predictable Output
-➔ Trading volume is relatively predictable because it often spikes around earnings, mergers, or major news — making it a practical target for analysis and real-world applications.
+    - **Help Large Investors Manage Liquidity**  
+      ➔ High volume days make it easier for funds to buy/sell large amounts without moving the stock too much.
 
+    - **Improve Short-Term Trading Strategies**  
+      ➔ Traders love volume surges for breakouts, reversals, and momentum trades right after financial releases.
+
+    - **Better Risk Management**  
+      ➔ High volume usually means higher volatility — knowing it in advance helps adjust positions or hedge risks.
+
+    - **Power Event-Driven Strategies**  
+      ➔ Funds that trade around earnings events use expected volume to decide if an opportunity is big enough.
+
+    - **We Wanted an App with Useful and Predictable Output**  
+      ➔ Trading volume is relatively predictable because it often spikes around earnings, mergers, or major news — making it a practical target for analysis and real-world applications.
     """)
 
 # 2. Top Traded Stocks in the Past 3 Months
